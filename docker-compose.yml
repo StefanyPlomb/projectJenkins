@@ -1,0 +1,7 @@
+services:
+  web:
+    image: projectjenkins:latest
+    container_name: projectjenkins-web
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
