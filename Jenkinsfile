@@ -57,11 +57,8 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                // baixa a :latest do Docker Hub e recria o container web se ela mudou
-                sh '''
-                    docker compose -p projectjenkins -f docker-compose.yml pull web
-                    docker compose -p projectjenkins -f docker-compose.yml up -d web
-                '''
+                // :latest local é a mesma imagem enviada ao Docker Hub; recria o web se mudou
+                sh 'docker compose -p projectjenkins -f docker-compose.yml up -d web'
             }
         }
     }
