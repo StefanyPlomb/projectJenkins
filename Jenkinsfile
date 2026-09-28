@@ -11,7 +11,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'projectjenkins'
+        IMAGE_NAME = 'stefanyplombon/projectjenkins'
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
     }
 
@@ -40,17 +40,35 @@ pipeline {
             }
         }
 
+        stage('Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub',
+                                                  usernameVariable: 'DH_USER',
+                                                  passwordVariable: 'DH_PASS')]) {
+                    sh '''
+                        echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push ${IMAGE_NAME}:latest
+                        docker logout
+                    '''
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
-                // recria o container web se a imagem :latest mudou
-                sh 'docker compose -p projectjenkins -f docker-compose.yml up -d web'
+                // baixa a :latest do Docker Hub e recria o container web se ela mudou
+                sh '''
+                    docker compose -p projectjenkins -f docker-compose.yml pull web
+                    docker compose -p projectjenkins -f docker-compose.yml up -d web
+                '''
             }
         }
     }
 
     post {
         always {
-            // remove só a tag numerada; :latest continua em uso pelo web
+            // remove só a tag numerada local; :latest continua em uso pelo web
             sh 'docker image rm ${IMAGE_NAME}:${IMAGE_TAG} || true'
         }
     }
